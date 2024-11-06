@@ -1,0 +1,24 @@
+{
+  "name": "meal-tracking-appreact",
+  "version": "1.0.0",
+  "main": "index.js",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "concurrently \"npm run start:client\" \"npm run start:server\" --kill-others --names \"CLIENT, SERVER\" -c \"blue, green\"",
+    "start:client": "cd client && npm start --workspace=client",
+    "start:server": "cd server && npm run dev --workspace=server",
+    "install:all": "npm install && cd client && npm install --workspace=client && cd .. && cd server && npm install --workspace=server",
+    "build": "npm run build --workspace=client"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "concurrently": "^9.0.1"
+  }
+}

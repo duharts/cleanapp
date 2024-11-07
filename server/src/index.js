@@ -127,7 +127,7 @@ async function syncSQLiteToDynamoDB() {
 
 //cron job
 // Sync every day at midnight
-cron.schedule('* * * * *', () => {
+cron.schedule(' 0 0 * * *', () => {
     syncSQLiteToDynamoDB().then(() => {
         console.log('Data sync completed');
     }).catch((error) => {

@@ -132,9 +132,25 @@ async function updateDynamoDB(tableName, data) {
                 }
             }
         );
+
     } catch (error) {
         console.error('Error updating DynamoDB:', error);
         throw new Error('DynamoDB update failed');
+    }
+}
+
+async function clearDB() {
+    try {
+        db.run('DELETE FROM orders WHERE status = "synced"', (err) => {
+            if (err) {
+                console.error(`Failed to delete synced orders from SQLite:`, err);
+            } else {
+                console.log(`Synced records successfully deleted from SQLite`);
+            }
+        });
+    } catch (error) {
+        console.error('Error deleting records from SQLite:', error);
+        throw new Error('SQLite cleaning failed');
     }
 }
 
@@ -190,8 +206,8 @@ async function uploadPendingSignaturesToS3() {
 };
 
 
-// Schedule to sync images to S3 every day at 12am
-cron.schedule('0 0 * * *', () => {
+// Schedule to sync images to S3 every 5 hours
+cron.schedule('0 0,5,10,15,20 * * *', () => {
     uploadPendingSignaturesToS3().then(() => {
         console.log('Signature sync to S3 completed');
     }).catch((error) => {
@@ -199,12 +215,21 @@ cron.schedule('0 0 * * *', () => {
     });
 });
 
-// Schedule to sync records to DynamoDB every day at 1am
-cron.schedule('0 1 * * *', () => {
+// Schedule to sync records to DynamoDB every 8 hours
+cron.schedule('0 1,9,17 * * *', () => {
     syncSQLiteToDynamoDB().then(() => {
         console.log('Data sync to DynamoDB completed');
     }).catch((error) => {
         console.error('Data sync to DynamoDB failed:', error);
+    });
+});
+
+// Schedule to clean local database every 12 hours
+cron.schedule('0 2,14 * * *', () => {
+    clearDB().then(() => {
+        console.log('Data removal from SQLite completed');
+    }).catch((error) => {
+        console.error('Data removal from SQLite failed:', error);
     });
 });
 

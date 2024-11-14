@@ -8,12 +8,20 @@ const mealAPI = require('./routes/mealAPI.js')
 const metricsAPI = require('./routes/metricsAPI.js')
 const sqlite3 = require('sqlite3')
 const AWS = require('aws-sdk')
+const fs = require('fs');
+const path = require('path');
 const cron = require('node-cron');
 
 dotenv.config()
 
 // Configure the SDK with your AWS region
 AWS.config.update({
+    accessKeyId: process.env.ACCESS_KEY,
+    secretAccessKey: process.env.SECRETACCESSKEY,
+    region: 'us-east-1'
+});
+
+const s3 = new AWS.S3({
     accessKeyId: process.env.ACCESS_KEY,
     secretAccessKey: process.env.SECRETACCESSKEY,
     region: 'us-east-1'
@@ -65,6 +73,7 @@ const db = new sqlite3.Database('./local.db', (err) => {
             mealCount TEXT NOT NULL,
             roomNumber TEXT NOT NULL,
             signS3url TEXT NOT NULL,
+            status TEXT NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`);
     }
@@ -111,6 +120,18 @@ async function updateDynamoDB(tableName, data) {
     try {
         await dynamoDB.put(params).promise();
         console.log('Data inserted/updated in DynamoDB');
+        db.run(
+            // updating the records after syncing with dynamodb
+            'UPDATE orders SET status = "synced" WHERE id = ?',
+            [data.id],
+            (updateErr) => {
+                if (updateErr) {
+                    console.error("Error updating order sync status:", updateErr);
+                } else {
+                    console.log(`Order ${data.id} synced to DynamoDB and updated in SQLite`);
+                }
+            }
+        );
     } catch (error) {
         console.error('Error updating DynamoDB:', error);
         throw new Error('DynamoDB update failed');
@@ -118,20 +139,72 @@ async function updateDynamoDB(tableName, data) {
 }
 
 async function syncSQLiteToDynamoDB() {
-    const sqliteData = await getDataFromSQLite('SELECT * FROM Orders');
+    const sqliteData = await getDataFromSQLite(`SELECT * FROM orders WHERE status = 'uploaded'`);
 
     for (const record of sqliteData) {
         await updateDynamoDB('mealtracker', record);
     }
 }
 
-//cron job
-// Sync every day at midnight
-cron.schedule('* * * * *', () => {
-    syncSQLiteToDynamoDB().then(() => {
-        console.log('Data sync completed');
+async function uploadPendingSignaturesToS3() {
+    db.all("SELECT * FROM orders WHERE status = 'pending'", async (err, rows) => {
+        if (err) {
+            console.error("Error fetching pending records:", err);
+            return;
+        }
+
+        for (const row of rows) {
+            try {
+                const fileContent = fs.readFileSync(row.signS3url);
+                const s3Params = {
+                    Bucket: 'mealtrackerbucket',
+                    Key: `signatures/${path.basename(row.signS3url)}`, // Use local file name
+                    Body: fileContent,
+                    ContentType: 'image/png',
+                };
+
+                // Upload to S3
+                const s3Response = await s3.upload(s3Params).promise();
+
+                // Update SQLite with S3 URL and mark as "uploaded"
+                db.run(
+                    'UPDATE orders SET signS3url = ?, status = "uploaded" WHERE id = ?',
+                    [s3Response.Location, row.id],
+                    (updateErr) => {
+                        if (updateErr) {
+                            console.error("Error updating order sync status:", updateErr);
+                        } else {
+                            console.log(`Order ${row.id} synced to S3 and updated in SQLite`);
+                            // deleting the local file after upload
+                            fs.unlinkSync(row.signS3url);
+                        }
+                    }
+                );
+
+            } catch (uploadErr) {
+                console.error(`Failed to upload order ${row.id} to S3:`, uploadErr);
+                // Keep status as "pending" for retry
+            }
+        }
+    });
+};
+
+
+// Schedule to sync images to S3 every day at 12am
+cron.schedule('0 0 * * *', () => {
+    uploadPendingSignaturesToS3().then(() => {
+        console.log('Signature sync to S3 completed');
     }).catch((error) => {
-        console.error('Data sync failed:', error);
+        console.error('Signature sync to S3 failed:', error);
+    });
+});
+
+// Schedule to sync records to DynamoDB every day at 1am
+cron.schedule('0 1 * * *', () => {
+    syncSQLiteToDynamoDB().then(() => {
+        console.log('Data sync to DynamoDB completed');
+    }).catch((error) => {
+        console.error('Data sync to DynamoDB failed:', error);
     });
 });
 

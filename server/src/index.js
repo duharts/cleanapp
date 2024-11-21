@@ -66,7 +66,7 @@ const db = new sqlite3.Database('./local.db', (err) => {
     } else {
         console.log('Connected to the local SQLite database.');
         db.run(`CREATE TABLE IF NOT EXISTS orders (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY,
             firstName TEXT NOT NULL,
             lastName TEXT NOT NULL,
             meal TEXT NOT NULL,
@@ -119,7 +119,7 @@ async function updateDynamoDB(tableName, data) {
 
     try {
         await dynamoDB.put(params).promise();
-        console.log('Data inserted/updated in DynamoDB');
+        // console.log('Data inserted/updated in DynamoDB');
         db.run(
             // updating the records after syncing with dynamodb
             'UPDATE orders SET status = "synced" WHERE id = ?',
@@ -208,6 +208,7 @@ async function uploadPendingSignaturesToS3() {
 
 // Schedule to sync images to S3 every 5 hours
 cron.schedule('0 0,5,10,15,20 * * *', () => {
+
     uploadPendingSignaturesToS3().then(() => {
         console.log('Signature sync to S3 completed');
     }).catch((error) => {
@@ -217,6 +218,7 @@ cron.schedule('0 0,5,10,15,20 * * *', () => {
 
 // Schedule to sync records to DynamoDB every 8 hours
 cron.schedule('0 1,9,17 * * *', () => {
+
     syncSQLiteToDynamoDB().then(() => {
         console.log('Data sync to DynamoDB completed');
     }).catch((error) => {
@@ -226,6 +228,7 @@ cron.schedule('0 1,9,17 * * *', () => {
 
 // Schedule to clean local database every 12 hours
 cron.schedule('0 2,14 * * *', () => {
+
     clearDB().then(() => {
         console.log('Data removal from SQLite completed');
     }).catch((error) => {

@@ -32,6 +32,17 @@ const getDateRange = (interval) => {
 
     return { startDate: formatDate(startDate), endDate: formatDate(new Date()) };
 };
+
+// Helper function to calculate default weekly range
+const getDefaultDateRange = () => {
+    const now = new Date();
+    const lastWeek = new Date();
+    lastWeek.setDate(now.getDate() - 7);
+
+    const formatDate = (date) => date.toISOString();
+    return { startDate: formatDate(lastWeek), endDate: formatDate(now) };
+};
+
 module.exports = (db) => {
     // GET endpoint to retrieve users
     router.get('/analytics', (req, res) => {
@@ -67,7 +78,6 @@ module.exports = (db) => {
         });
     });
 
-    // DELETE endpoint to delete all orders
     router.get('/meal-count/:interval', async (req, res) => {
         const { interval } = req.params;
         const { startDate, endDate } = getDateRange(interval);
@@ -104,6 +114,50 @@ module.exports = (db) => {
         } catch (err) {
             console.error("Error fetching meal counts from DynamoDB:", err);
             res.status(500).json({ error: "Failed to fetch meal counts" });
+        }
+    });
+
+    router.get('/meal-analytics', async (req, res) => {
+        try {
+            const { startDate, endDate, limit = 10, lastEvaluatedKey } = req.query;
+
+            // Use default weekly range if startDate or endDate is not provided
+            const range = getDefaultDateRange();
+            const queryStartDate = startDate || range.startDate;
+            const queryEndDate = endDate || range.endDate;
+
+            // Define the DynamoDB query parameters
+            const params = {
+                TableName: 'mealtracker',
+                FilterExpression: 'created_at BETWEEN :startDate AND :endDate',
+                ExpressionAttributeValues: {
+                    ':startDate': queryStartDate,
+                    ':endDate': queryEndDate,
+                },
+                Limit: parseInt(limit, 10),
+            };
+            // const params = {
+            //     TableName: 'mealtracker', // Your DynamoDB table name
+            //     FilterExpression: 'created_at BETWEEN :start AND :end',
+            //     ExpressionAttributeValues: {
+            //         ':start': startDate,
+            //         ':end': endDate,
+            //     },
+            // };
+
+            // Query the DynamoDB table
+            const data = await dynamoDB.scan(params).promise();
+
+            res.status(200).json({
+                orders: data.Items,
+                lastEvaluatedKey: data.LastEvaluatedKey ? JSON.stringify(data.LastEvaluatedKey) : null,
+                startDate: queryStartDate,
+                endDate: queryEndDate,
+                limit: parseInt(limit, 10),
+            });
+        } catch (error) {
+            console.error('Error fetching orders:', error);
+            res.status(500).json({ error: 'Internal Server Error' });
         }
     });
     return router;

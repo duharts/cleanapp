@@ -102,6 +102,11 @@ app.get('/', (req, res) => {
     res.send('Welcome to the Meal Tracking Application server!');
 });
 
+const getTimestamp = () => {
+    const now = new Date();
+    return now.toLocaleString(); // e.g., "11/21/2024, 4:35:00 PM"
+};
+
 function getDataFromSQLite(query) {
     return new Promise((resolve, reject) => {
         db.all(query, [], (err, rows) => {
@@ -145,7 +150,7 @@ async function clearDB() {
             if (err) {
                 console.error(`Failed to delete synced orders from SQLite:`, err);
             } else {
-                console.log(`Synced records successfully deleted from SQLite`);
+                console.log(`Synced records successfully deleted from SQLite at [${getTimestamp()}]`);
             }
         });
     } catch (error) {
@@ -205,32 +210,31 @@ async function uploadPendingSignaturesToS3() {
     });
 };
 
-
-// Schedule to sync images to S3 every 5 hours
-cron.schedule('0 0,5,10,15,20 * * *', () => {
+// Schedule to sync images to S3 every 2 minutes
+cron.schedule('*/2 * * * *', () => {
 
     uploadPendingSignaturesToS3().then(() => {
-        console.log('Signature sync to S3 completed');
+        console.log(`Signature sync to S3 completed at [${getTimestamp()}]`);
     }).catch((error) => {
         console.error('Signature sync to S3 failed:', error);
     });
 });
 
-// Schedule to sync records to DynamoDB every 8 hours
-cron.schedule('0 1,9,17 * * *', () => {
+// Schedule to sync records to DynamoDB every 5 minutes
+cron.schedule('*/5 * * * *', () => {
 
     syncSQLiteToDynamoDB().then(() => {
-        console.log('Data sync to DynamoDB completed');
+        console.log(`Data sync to DynamoDB completed at [${getTimestamp()}]`);
     }).catch((error) => {
         console.error('Data sync to DynamoDB failed:', error);
     });
 });
 
-// Schedule to clean local database every 12 hours
-cron.schedule('0 2,14 * * *', () => {
+// Schedule to clean local database every 9 minutes
+cron.schedule('*/9 * * * *', () => {
 
     clearDB().then(() => {
-        console.log('Data removal from SQLite completed');
+        console.log(`Data removal from SQLite completed at [${getTimestamp()}]`);
     }).catch((error) => {
         console.error('Data removal from SQLite failed:', error);
     });

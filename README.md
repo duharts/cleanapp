@@ -12,7 +12,7 @@ This application helps track meal orders and details, built with a ReactJS clien
 SECRETACCESSKEY=asdfasdfas to dynamodb this is done after creating a role IAM for DynamoDB and s3 Access 
 
 2. Create your s3 bucket and add it to code cleanapp/server/src/routes
-/mealAPI.js mealtrackerbucket (Change this to your bucket name)*
+/mealAPI.js mealtrackerbucket (Change this to your bucket name)* Also Change: cleanapp\server\src\index.js Line 176 to(Change this to your bucket name) mealtrackerbucket1
 3. http://localhost:3000
 4. http://localhost:5000/api/orders
 6. http://localhost:5000/api/analytics

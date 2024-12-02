@@ -16,6 +16,7 @@ SECRETACCESSKEY=asdfasdfas to dynamodb this is done after creating a role IAM fo
 3. http://localhost:3000
 4. http://localhost:5000/api/orders
 6. http://localhost:5000/api/analytics
+7. http://localhost:3000/api/analytics
 2.  **Install Dependencies**  
    At the root level, install all dependencies for both the client and server by running:
    ```bash

@@ -20,6 +20,8 @@ SECRETACCESSKEY=asdfasdfas to dynamodb this is done after creating a role IAM fo
 2.  **Install Dependencies**  
    At the root level, install all dependencies for both the client and server by running:
    ```bash
+
+
    npm run install:all
 3. **Start the Applications**  
    To start both the client and server simultaneously, run the command in the root directory:
@@ -27,4 +29,20 @@ SECRETACCESSKEY=asdfasdfas to dynamodb this is done after creating a role IAM fo
    npm start
 
 This will launch the React frontend and the Node.js backend server, allowing you to access the full functionality of the Meal Tracking Application.
+
+
+To scan database you can useAWS CLI with code
+
+Use the scan command with a filter to get data for December 2024. Replace YourTableName with your actual table name:
+
+bash
+Copy code
+aws dynamodb scan \
+  --table-name YourTableName \
+  --filter-expression "begins_with(created_at, :month)" \
+  --expression-attribute-values '{":month":{"S":"2024-12"}}' \
+  --output json > december_data.json
+
+This is for decemeber and is not tle specifice you need to update the table name to mealtracker
+- then recieve json and quickly manipulate in chatgpt ith JSON file OR you can do a CSV of entire table or period and then coujnt in GPT
 

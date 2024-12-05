@@ -98,6 +98,10 @@ app.use(express.urlencoded({ extended: true }))
 //routes
 app.use('/api', mealAPI(db))
 app.use('/api', metricsAPI(db))
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'Server is running' });
+});
 app.get('/', (req, res) => {
     res.send('Welcome to the Meal Tracking Application server!');
 });
@@ -210,8 +214,8 @@ async function uploadPendingSignaturesToS3() {
     });
 };
 
-// Schedule to sync images to S3 every 2 minutes
-cron.schedule('*/2 * * * *', () => {
+// Schedule to sync images to S3 every 3 hours
+cron.schedule('0 */3 * * *', () => {
 
     uploadPendingSignaturesToS3().then(() => {
         console.log(`Signature sync to S3 completed at [${getTimestamp()}]`);
@@ -220,8 +224,8 @@ cron.schedule('*/2 * * * *', () => {
     });
 });
 
-// Schedule to sync records to DynamoDB every 5 minutes
-cron.schedule('*/5 * * * *', () => {
+// Schedule to sync records to DynamoDB every 3 hours staggered by 1 hour
+cron.schedule('0 1-23/3 * * *', () => {
 
     syncSQLiteToDynamoDB().then(() => {
         console.log(`Data sync to DynamoDB completed at [${getTimestamp()}]`);
@@ -230,8 +234,8 @@ cron.schedule('*/5 * * * *', () => {
     });
 });
 
-// Schedule to clean local database every 9 minutes
-cron.schedule('*/9 * * * *', () => {
+// Schedule to clean local database every 3 hours staggered by 2 hours
+cron.schedule('0 2-23/3 * * *', () => {
 
     clearDB().then(() => {
         console.log(`Data removal from SQLite completed at [${getTimestamp()}]`);

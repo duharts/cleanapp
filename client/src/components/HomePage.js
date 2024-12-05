@@ -89,9 +89,9 @@ function MealOrderSystem() {
     useEffect(() => {
         const getCurrentMeal = () => {
             const hour = new Date().getHours();
-            if (hour >= 2 && hour < 11) return 'breakfast';
-            if (hour >= 11 && hour < 16) return 'lunch';
-            if (hour >= 16 && hour < 22) return 'dinner';
+            if (hour >= 5 && hour < 8) return 'breakfast';
+            if (hour >= 12 && hour < 14) return 'lunch';
+            if (hour >= 17 && hour < 19) return 'dinner';
             return 'closed';
         };
 
@@ -123,6 +123,21 @@ function MealOrderSystem() {
         setTimeout(() => setClearSignature(false), 0);
     };
 
+    const isDev = process.env.NODE_ENV !== 'production';
+    // const backendURL = isDev ? 'http://localhost:5000' : 'http://127.0.0.1:5000';
+
+    function checkServerStatus() {
+        axios.get(`http://localhost:5000/`)
+            .then(response => {
+                console.log('Server status:', response.data.status);
+            })
+            .catch(error => {
+                console.error('Error checking server status:', error);
+            });
+    }
+
+    checkServerStatus();
+
     const submitOrder = async () => {
         const orderData = {
             firstName,
@@ -136,7 +151,7 @@ function MealOrderSystem() {
         };
 
         console.log(orderData)
-        const response = await axios.post('http://localhost:5000/api/submit-order', {
+        const response = await axios.post(`http://localhost:5000/api/submit-order`, {
             data: orderData
         }).then((res) => {
             console.log('Order submitted -> ', res)

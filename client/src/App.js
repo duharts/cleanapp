@@ -5,18 +5,19 @@ import OrderMetrics from './components/Analytics';
 
 const App = () => {
 	return (
-		<Router>
-			<Routes>
-				{/* Home page route */}
-				<Route path="/" element={<MealOrderSystem />} />
+		// <Router>
+		// 	<Routes>
+		// 		{/* Home page route */}
+		// 		<Route path="/" element={<MealOrderSystem />} />
 
-				{/* Analytics page route */}
-				<Route path="/analytics" element={<OrderMetrics />} />
+		// 		{/* Analytics page route */}
+		// 		<Route path="/analytics" element={<OrderMetrics />} />
 
-				{/* Fallback route for 404 */}
-				{/* <Route path="*" element={<NotFoundPage />} /> */}
-			</Routes>
-		</Router>
+		// 		{/* Fallback route for 404 */}
+		// 		{/* <Route path="*" element={<NotFoundPage />} /> */}
+		// 	</Routes>
+		// </Router>
+		<MealOrderSystem />
 	);
 };
 

@@ -55,7 +55,9 @@ const OrderMetrics = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {orders.map((order, index) => (
+                    {orders.length === 0 ? (
+                        <p>No records found</p>
+                    ) : (orders.map((order, index) => (
                         <tr key={index}>
                             <td>{order.id}</td>
                             <td>{order.meal}</td>
@@ -63,7 +65,7 @@ const OrderMetrics = () => {
                             <td>{order.roomNumber}</td>
                             <td>{order.created_at}</td>
                         </tr>
-                    ))}
+                    )))}
                 </tbody>
             </table>
         </div>
